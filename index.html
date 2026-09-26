@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Click Clash</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        sports: ['Oswald', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            dark: '#0f172a',
+                            panel: '#1e293b',
+                            primary: '#8b5cf6',
+                            secondary: '#10b981',
+                            gold: '#fbbf24',
+                            silver: '#94a3b8',
+                            bronze: '#b45309'
+                        }
+                    },
+                    animation: {
+                        'pulse-fast': 'pulse 1s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'bounce-slight': 'bounce 0.5s infinite alternate',
+                    }
+                }
+            }
+        }
+    </script>
+    
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #f1f5f9;
+            overscroll-behavior-y: contain; /* Previne pull-to-refresh no mobile */
+        }
+        
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Efeito no botão principal de clique */
+        .click-btn {
+            box-shadow: 0 0 30px rgba(139, 92, 246, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
+            transition: transform 0.05s ease, box-shadow 0.1s ease;
+            touch-action: manipulation; /* Melhora a resposta ao toque */
+        }
+        .click-btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 0 15px rgba(139, 92, 246, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Estilos de Ranking */
+        .rank-1 { border-left: 4px solid #fbbf24; background: linear-gradient(90deg, rgba(251,191,36,0.1) 0%, transparent 100%); }
+        .rank-2 { border-left: 4px solid #94a3b8; background: linear-gradient(90deg, rgba(148,163,184,0.1) 0%, transparent 100%); }
+        .rank-3 { border-left: 4px solid #b45309; background: linear-gradient(90deg, rgba(180,83,9,0.1) 0%, transparent 100%); }
+
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans antialiased overflow-hidden selection:bg-brand-primary selection:text-white">
+
+    
+    <!-- NAVBAR -->
+    <nav class="bg-brand-panel border-b border-slate-700/50 p-4 shrink-0 z-10">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-hand-pointer text-brand-primary text-2xl animate-bounce-slight"></i>
+                <span class="font-sports text-2xl tracking-wider text-white uppercase">Click<span class="text-brand-primary">Clash</span></span>
+            </div>
+            <div id="connection-status" class="text-sm font-semibold text-slate-400 flex items-center gap-2">
+                <span class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span> Conectando...
+            </div>
+        </div>
+    </nav>
+
+    <main class="flex-grow relative overflow-hidden flex flex-col">
+        
+        <!-- TELA 1: LOGIN E SETUP -->
+        <div id="screen-login" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 bg-brand-dark transition-opacity duration-300">
+            <div class="glass-panel p-8 rounded-2xl w-full max-w-md shadow-2xl space-y-6">
+                <h2 class="text-2xl font-bold text-center">Bem-vindo ao Torneio</h2>
+                
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-1">Seu Apelido</label>
+                    <input type="text" id="input-username" placeholder="Ex: NinjaClicker" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4 pt-2">
+                    <button onclick="uiShowCreateRoom()" class="bg-brand-primary hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-plus"></i> Criar Sala
+                    </button>
+                    <button onclick="uiShowJoinRoom()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-sign-in-alt"></i> Entrar
+                    </button>
+                </div>
+
+                <!-- Painel Oculto: Criar Sala -->
+                <div id="panel-create" class="hidden border-t border-slate-700 pt-4 mt-4 space-y-4">
+                    <label class="block text-sm font-medium text-slate-400">Duração da Partida</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        <button onclick="selectTime(2)" id="btn-time-2" class="time-btn bg-brand-primary text-white py-2 rounded-md font-bold border-2 border-brand-primary">2 Min</button>
+                        <button onclick="selectTime(5)" id="btn-time-5" class="time-btn bg-slate-800 text-slate-300 py-2 rounded-md font-bold border-2 border-transparent hover:border-slate-500">5 Min</button>
+                        <button onclick="selectTime(10)" id="btn-time-10" class="time-btn bg-slate-800 text-slate-300 py-2 rounded-md font-bold border-2 border-transparent hover:border-slate-500">10 Min</button>
+                    </div>
+                    <button onclick="actionCreateRoom()" id="btn-do-create" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg mt-2 transition-colors">
+                        Gerar Sala
+                    </button>
+                </div>
+
+                <!-- Painel Oculto: Entrar na Sala -->
+                <div id="panel-join" class="hidden border-t border-slate-700 pt-4 mt-4 space-y-4">
+                    <label class="block text-sm font-medium text-slate-400">Código da Sala</label>
+                    <input type="text" id="input-room-code" placeholder="Ex: A4B2" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white uppercase text-center font-mono tracking-widest text-xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
+                    <button onclick="actionJoinRoom()" id="btn-do-join" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-colors">
+                        Conectar
+                    </button>
+                </div>
+                
+                <div id="login-error" class="text-red-400 text-sm text-center hidden">Erro ao conectar. Tente novamente.</div>
+            </div>
+        </div>
+
+        <!-- TELA 2: LOBBY DE ESPERA -->
+        <div id="screen-lobby" class="hidden absolute inset-0 z-10 flex flex-col items-center justify-center p-4 bg-brand-dark">
+            <div class="glass-panel p-8 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col h-[80vh]">
+                <div class="text-center mb-6">
+                    <h2 class="text-3xl font-sports uppercase text-white tracking-wide">Sala de Espera</h2>
+                    <p class="text-slate-400 mt-2">Compartilhe o código abaixo com seus amigos</p>
+                    <div class="mt-4 bg-slate-900 border border-slate-700 p-4 rounded-xl flex items-center justify-center gap-4">
+                        <span id="display-room-code" class="text-4xl font-mono font-bold tracking-widest text-brand-primary">----</span>
+                        <button onclick="copyRoomCode()" class="text-slate-400 hover:text-white transition-colors" title="Copiar"><i class="fa-regular fa-copy text-xl"></i></button>
+                    </div>
+                    <p id="display-room-time" class="text-brand-secondary font-semibold mt-3"><i class="fa-regular fa-clock"></i> Partida de 2 Minutos</p>
+                </div>
+
+                <div class="flex-grow bg-slate-800/50 rounded-xl p-4 overflow-y-auto border border-slate-700/50 mb-6">
+                    <h3 class="text-sm font-bold text-slate-400 uppercase mb-3 border-b border-slate-700 pb-2">Jogadores Conectados (<span id="player-count">0</span>)</h3>
+                    <ul id="lobby-players-list" class="space-y-2">
+                        <!-- Preenchido via JS -->
+                    </ul>
+                </div>
+
+                <div id="host-controls" class="hidden">
+                    <button onclick="actionStartGame()" class="w-full bg-brand-primary hover:bg-purple-600 text-white font-bold py-4 rounded-xl text-lg uppercase tracking-wider transition-all transform hover:scale-[1.02] shadow-lg shadow-purple-500/20">
+                        Iniciar Partida Agora
+                    </button>
+                </div>
+                <div id="guest-controls" class="text-center text-slate-400 animate-pulse hidden">
+                    Aguardando o criador da sala iniciar o jogo...
+                </div>
+            </div>
+        </div>
+
+        <!-- TELA 3: JOGO E RANKING (Lado a Lado / Empilhado) -->
+        <div id="screen-game" class="hidden absolute inset-0 z-0 flex flex-col md:flex-row bg-slate-900 overflow-hidden">
+            
+            <!-- ÁREA DE CLIQUE (Esquerda / Cima) -->
+            <div class="h-[45%] md:h-auto md:flex-1 flex flex-col p-2 sm:p-4 border-b md:border-b-0 md:border-r border-slate-700/50 relative shrink-0">
+                <!-- Info Topo -->
+                <div class="flex justify-between items-center bg-slate-800/80 rounded-full px-4 py-2 md:px-6 md:py-3 border border-slate-700 mb-2 md:mb-6 shadow-md shrink-0">
+                    <div class="flex flex-col">
+                        <span class="text-[10px] md:text-xs text-slate-400 uppercase tracking-widest font-bold">Tempo</span>
+                        <span id="game-timer" class="font-mono text-xl md:text-3xl font-bold text-brand-secondary leading-none">00:00</span>
+                    </div>
+                    <div class="flex flex-col text-right">
+                        <span class="text-[10px] md:text-xs text-slate-400 uppercase tracking-widest font-bold">Meus Cliques</span>
+                        <span id="game-my-score" class="font-sports text-xl md:text-3xl font-bold text-white leading-none">0</span>
+                    </div>
+                </div>
+
+                <!-- Botão Gigante (Escalonável para caber sem rolar) -->
+                <div class="flex-grow flex items-center justify-center min-h-0 py-2">
+                    <button id="main-click-btn" class="click-btn aspect-square h-full max-h-[160px] sm:max-h-[220px] md:max-h-[350px] w-auto rounded-full bg-gradient-to-br from-brand-primary to-purple-800 flex flex-col items-center justify-center border-4 md:border-8 border-slate-800 text-white outline-none select-none transition-transform">
+                        <i class="fa-solid fa-hand-pointer text-2xl md:text-5xl mb-1 opacity-50"></i>
+                        <span class="font-sports text-2xl md:text-5xl uppercase tracking-widest">Clique!</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- ÁREA DE RANKING (Direita / Baixo) -->
+            <div class="flex-1 w-full md:w-[400px] lg:w-[450px] flex flex-col bg-brand-panel p-2 md:p-4 overflow-hidden">
+                <div class="flex items-center justify-between mb-2 border-b border-slate-700 pb-2 shrink-0">
+                    <h3 class="font-sports text-lg md:text-2xl uppercase tracking-wider text-white"><i class="fa-solid fa-trophy text-brand-gold mr-1"></i> Classificação</h3>
+                </div>
+                
+                <div class="flex-grow overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
+                    <ul id="leaderboard-list" class="space-y-1.5 md:space-y-2 pb-4">
+                        <!-- Itens do Ranking injetados pelo JS -->
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- OVERLAY: FIM DE JOGO -->
+        <div id="screen-result" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm p-4">
+            <div class="glass-panel p-8 rounded-3xl w-full max-w-lg text-center border-t-4 border-brand-primary">
+                <h2 class="font-sports text-5xl uppercase text-white mb-2">Fim de Jogo!</h2>
+                <p class="text-slate-400 mb-8">A partida terminou. Veja o campeão!</p>
+                
+                <div class="bg-gradient-to-b from-yellow-900/40 to-transparent p-6 rounded-2xl border border-yellow-500/30 mb-8 relative">
+                    <i class="fa-solid fa-crown text-yellow-500 text-4xl absolute -top-5 left-1/2 transform -translate-x-1/2 bg-slate-900 rounded-full p-2"></i>
+                    <h3 class="text-sm text-yellow-500 uppercase tracking-widest font-bold mt-2">Vencedor</h3>
+                    <p id="winner-name" class="font-sports text-4xl text-white mt-1">Carregando...</p>
+                    <p id="winner-score" class="text-xl text-slate-300 font-mono mt-2">0 cliques</p>
+                </div>
+                
+                <button onclick="resetToLobby()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition-colors">
+                    Sair da Sala
+                </button>
+            </div>
+        </div>
+        
+    </main>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, updateDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Firebase Configuração Padrão do Ambiente
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-click-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            projectId: "demo-project", // Fallback apenas visual se falhar
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Estado Global
+        let currentUser = null;
+        let username = "";
+        let currentRoomId = null;
+        let isHost = false;
+        let selectedTime = 2; // minutos
+        let gameStatus = 'idle'; // idle, waiting, playing, finished
+        
+        let localScore = 0;
+        let lastSyncedScore = 0;
+        let syncInterval = null;
+        let timerInterval = null;
+        
+        // Histórico de Ranks para calcular setas Verdes/Vermelhas
+        let previousRanks = {}; // { userId: index }
+        let currentTrends = {}; // { userId: 'up' | 'down' | 'flat' }
+        
+        // Listeners do Firebase
+        let unsubscribeRoom = null;
+        let unsubscribePlayers = null;
+
+        // Referências DOM
+        const elStatus = document.getElementById('connection-status');
+        const errLogin = document.getElementById('login-error');
+        
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                currentUser = auth.currentUser;
+                elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 inline-block animate-pulse"></span> Conectado`;
+            } catch (error) {
+                console.error("Erro na autenticação", error);
+                elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Erro de Conexão`;
+            }
+        }
+        
+        // Chamada Inicial
+        initAuth();
+
+        function switchScreen(screenId) {
+            const screens = ['screen-login', 'screen-lobby', 'screen-game', 'screen-result'];
+            screens.forEach(id => {
+                const el = document.getElementById(id);
+                if(el) el.classList.add('hidden');
+            });
+            document.getElementById(screenId).classList.remove('hidden');
+        }
+
+        window.uiShowCreateRoom = () => {
+            document.getElementById('panel-create').classList.remove('hidden');
+            document.getElementById('panel-join').classList.add('hidden');
+        }
+
+        window.uiShowJoinRoom = () => {
+            document.getElementById('panel-join').classList.remove('hidden');
+            document.getElementById('panel-create').classList.add('hidden');
+        }
+
+        window.selectTime = (mins) => {
+            selectedTime = mins;
+            // Atualizar UI botões
+            [2, 5, 10].forEach(t => {
+                const btn = document.getElementById(`btn-time-${t}`);
+                if(t === mins) {
+                    btn.classList.replace('bg-slate-800', 'bg-brand-primary');
+                    btn.classList.replace('text-slate-300', 'text-white');
+                    btn.classList.replace('border-transparent', 'border-brand-primary');
+                } else {
+                    btn.classList.replace('bg-brand-primary', 'bg-slate-800');
+                    btn.classList.replace('text-white', 'text-slate-300');
+                    btn.classList.replace('border-brand-primary', 'border-transparent');
+                }
+            });
+        }
+
+        window.copyRoomCode = () => {
+            if(currentRoomId) {
+                const el = document.createElement('textarea');
+                el.value = currentRoomId;
+                document.body.appendChild(el);
+                el.select();
+                document.execCommand('copy');
+                document.body.removeChild(el);
+                
+                // Feedback visual curto
+                const codeDisplay = document.getElementById('display-room-code');
+                const origCode = codeDisplay.innerText;
+                codeDisplay.innerText = "COPIADO";
+                setTimeout(() => { codeDisplay.innerText = origCode; }, 1000);
+            }
+        }
+
+        
+        // Auxiliar: Gera código curto de sala
+        function generateRoomCode() {
+            const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+            let result = '';
+            for (let i = 0; i < 4; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        }
+
+        window.actionCreateRoom = async () => {
+            const nameInput = document.getElementById('input-username').value.trim();
+            if(!nameInput) { showMessage("Digite seu apelido primeiro!"); return; }
+            if(!currentUser) { showMessage("Aguarde a conexão com o servidor..."); return; }
+
+            username = nameInput;
+            const btn = document.getElementById('btn-do-create');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando...';
+            btn.disabled = true;
+
+            try {
+                currentRoomId = generateRoomCode();
+                isHost = true;
+                
+                // Regra 1: Path estrito
+                const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_rooms', currentRoomId);
+                await setDoc(roomRef, {
+                    hostId: currentUser.uid,
+                    durationMins: selectedTime,
+                    status: 'waiting',
+                    createdAt: Date.now()
+                });
+
+                await joinPlayerToRoom();
+                setupLobbyUI();
+                
+            } catch (error) {
+                console.error(error);
+                errLogin.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = 'Gerar Sala';
+                btn.disabled = false;
+            }
+        }
+
+        window.actionJoinRoom = async () => {
+            const nameInput = document.getElementById('input-username').value.trim();
+            const codeInput = document.getElementById('input-room-code').value.trim().toUpperCase();
+            
+            if(!nameInput) { showMessage("Digite seu apelido primeiro!"); return; }
+            if(!codeInput) { showMessage("Digite o código da sala!"); return; }
+            if(!currentUser) return;
+
+            username = nameInput;
+            const btn = document.getElementById('btn-do-join');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
+            btn.disabled = true;
+            errLogin.classList.add('hidden');
+
+            try {
+                // Tenta achar a sala (Lendo todas e filtrando por regra 2)
+                const roomsCol = collection(db, 'artifacts', appId, 'public', 'data', 'clicker_rooms');
+                const roomsSnap = await getDocs(roomsCol);
+                let roomFound = null;
+                
+                roomsSnap.forEach(doc => {
+                    if (doc.id === codeInput) roomFound = doc.data();
+                });
+
+                if (roomFound) {
+                    if (roomFound.status !== 'waiting') {
+                        errLogin.innerText = "Esta sala já está jogando ou finalizada.";
+                        errLogin.classList.remove('hidden');
+                        return;
+                    }
+                    currentRoomId = codeInput;
+                    isHost = false;
+                    selectedTime = roomFound.durationMins || 2;
+                    
+                    await joinPlayerToRoom();
+                    setupLobbyUI();
+                } else {
+                    errLogin.innerText = "Sala não encontrada. Verifique o código.";
+                    errLogin.classList.remove('hidden');
+                }
+            } catch (error) {
+                console.error(error);
+                errLogin.innerText = "Erro ao conectar.";
+                errLogin.classList.remove('hidden');
+            } finally {
+                btn.innerHTML = 'Conectar';
+                btn.disabled = false;
+            }
+        }
+
+        async function joinPlayerToRoom() {
+            // Regra 1 e 2: Path estrito, e criar doc com id único para evitar queries complexas
+            const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_players', `${currentRoomId}_${currentUser.uid}`);
+            
+            // Reset local stats
+            localScore = 0;
+            lastSyncedScore = 0;
+            previousRanks = {};
+            currentTrends = {};
+
+            await setDoc(playerRef, {
+                roomId: currentRoomId,
+                userId: currentUser.uid,
+                username: username,
+                score: 0,
+                joinedAt: Date.now()
+            });
+
+            listenToRoomUpdates();
+            listenToPlayers();
+        }
+
+        function listenToRoomUpdates() {
+            if (unsubscribeRoom) unsubscribeRoom();
+            
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_rooms', currentRoomId);
+            unsubscribeRoom = onSnapshot(roomRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    handleRoomStateChange(data);
+                }
+            }, (error) => {
+                console.error("Room listener error", error);
+            });
+        }
+
+        function listenToPlayers() {
+            if (unsubscribePlayers) unsubscribePlayers();
+            
+            const playersCol = collection(db, 'artifacts', appId, 'public', 'data', 'clicker_players');
+            // Regra 2: Sem complex queries. Buscamos tudo e filtramos localmente.
+            // (Para um app demo, buscar todos da collection public é seguro. Para escalar, usaríamos subcollections de forma diferente).
+            
+            unsubscribePlayers = onSnapshot(playersCol, (snapshot) => {
+                const roomPlayers = [];
+                snapshot.forEach(doc => {
+                    const p = doc.data();
+                    if (p.roomId === currentRoomId) {
+                        roomPlayers.push(p);
+                    }
+                });
+                
+                updateLobbyList(roomPlayers);
+                if (gameStatus === 'playing') {
+                    updateLeaderboard(roomPlayers);
+                }
+            }, (error) => {
+                console.error("Players listener error", error);
+            });
+        }
+
+        function setupLobbyUI() {
+            document.getElementById('display-room-code').innerText = currentRoomId;
+            document.getElementById('display-room-time').innerHTML = `<i class="fa-regular fa-clock"></i> Partida de ${selectedTime} Minutos`;
+            
+            if (isHost) {
+                document.getElementById('host-controls').classList.remove('hidden');
+                document.getElementById('guest-controls').classList.add('hidden');
+            } else {
+                document.getElementById('host-controls').classList.add('hidden');
+                document.getElementById('guest-controls').classList.remove('hidden');
+            }
+            
+            switchScreen('screen-lobby');
+            gameStatus = 'waiting';
+        }
+
+        function updateLobbyList(players) {
+            document.getElementById('player-count').innerText = players.length;
+            const ul = document.getElementById('lobby-players-list');
+            
+            // Ordenar por ordem de chegada para o lobby
+            players.sort((a,b) => a.joinedAt - b.joinedAt);
+            
+            ul.innerHTML = players.map(p => `
+                <li class="flex items-center gap-3 bg-slate-800 p-3 rounded-lg">
+                    <div class="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center text-white font-bold uppercase">
+                        ${p.username.charAt(0)}
+                    </div>
+                    <span class="text-white font-medium">${p.username} ${p.userId === currentUser.uid ? '<span class="text-xs text-brand-secondary ml-1">(Você)</span>' : ''}</span>
+                </li>
+            `).join('');
+        }
+
+        window.actionStartGame = async () => {
+            if(!isHost || !currentRoomId) return;
+            
+            const endTime = Date.now() + (selectedTime * 60 * 1000);
+            
+            const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_rooms', currentRoomId);
+            await updateDoc(roomRef, {
+                status: 'playing',
+                endTime: endTime
+            });
+        }
+
+        function handleRoomStateChange(roomData) {
+            if (roomData.status === 'playing' && gameStatus === 'waiting') {
+                // Iniciar jogo localmente para todos
+                gameStatus = 'playing';
+                startGameSession(roomData.endTime);
+            } else if (roomData.status === 'finished' && gameStatus === 'playing') {
+                endGameSession();
+            }
+        }
+
+        function startGameSession(endTimeTs) {
+            switchScreen('screen-game');
+            localScore = 0;
+            lastSyncedScore = 0;
+            document.getElementById('game-my-score').innerText = '0';
+            
+            // Evento principal de clique
+            const btn = document.getElementById('main-click-btn');
+            
+            // Remover listeners antigos para evitar duplicação
+            btn.onclick = null; 
+            btn.onclick = (e) => {
+                if(gameStatus !== 'playing') return;
+                
+                // Feedback visual leve extra
+                const plusOne = document.createElement('div');
+                plusOne.innerText = '+1';
+                plusOne.className = 'absolute text-2xl font-bold text-white pointer-events-none select-none opacity-0';
+                plusOne.style.left = (e.offsetX || btn.offsetWidth/2) + 'px';
+                plusOne.style.top = (e.offsetY || btn.offsetHeight/2) + 'px';
+                plusOne.style.animation = 'floatUp 0.5s ease-out forwards';
+                btn.appendChild(plusOne);
+                
+                setTimeout(() => btn.removeChild(plusOne), 500);
+
+                localScore++;
+                document.getElementById('game-my-score').innerText = localScore;
+            };
+
+            // Loop de Sincronização com Firestore (a cada 1.5s para não sobrecarregar)
+            if(syncInterval) clearInterval(syncInterval);
+            syncInterval = setInterval(async () => {
+                if (gameStatus === 'playing' && localScore > lastSyncedScore) {
+                    lastSyncedScore = localScore;
+                    const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_players', `${currentRoomId}_${currentUser.uid}`);
+                    try {
+                        await updateDoc(playerRef, { score: localScore });
+                    } catch(e) { console.error("Sync error", e); }
+                }
+            }, 1500);
+
+            // Loop do Timer
+            if(timerInterval) clearInterval(timerInterval);
+            const elTimer = document.getElementById('game-timer');
+            
+            timerInterval = setInterval(() => {
+                const now = Date.now();
+                const diff = endTimeTs - now;
+                
+                if (diff <= 0) {
+                    elTimer.innerText = "00:00";
+                    clearInterval(timerInterval);
+                    if(isHost) {
+                        // Host decreta o fim
+                        const roomRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_rooms', currentRoomId);
+                        updateDoc(roomRef, { status: 'finished' });
+                    }
+                } else {
+                    const mins = Math.floor(diff / 60000);
+                    const secs = Math.floor((diff % 60000) / 1000);
+                    elTimer.innerText = `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+                    
+                    if (diff < 10000) {
+                        elTimer.classList.add('text-red-500', 'animate-pulse');
+                        elTimer.classList.remove('text-brand-secondary');
+                    }
+                }
+            }, 100);
+        }
+
+        function updateLeaderboard(players) {
+            // Ordenar por score decrescente
+            players.sort((a, b) => b.score - a.score);
+            
+            const ul = document.getElementById('leaderboard-list');
+            
+            let html = '';
+            
+            players.forEach((p, index) => {
+                const rank = index + 1;
+                let trendIcon = '<div class="w-4 md:w-5"></div>'; // Espaço vazio
+                
+                // Calcular Tendência
+                const prevRankIndex = previousRanks[p.userId];
+                if (prevRankIndex !== undefined) {
+                    if (index < prevRankIndex) {
+                        currentTrends[p.userId] = 'up';
+                    } else if (index > prevRankIndex) {
+                        currentTrends[p.userId] = 'down';
+                    }
+                }
+                
+                // Salvar rank atual para próxima iteração
+                previousRanks[p.userId] = index;
+                
+                // Renderizar Ícone de Tendência
+                const trend = currentTrends[p.userId];
+                if (trend === 'up') trendIcon = '<i class="fa-solid fa-caret-up text-green-500 text-sm md:text-lg w-4 md:w-5 text-center"></i>';
+                else if (trend === 'down') trendIcon = '<i class="fa-solid fa-caret-down text-red-500 text-sm md:text-lg w-4 md:w-5 text-center"></i>';
+                else trendIcon = '<i class="fa-solid fa-minus text-slate-600 text-xs md:text-sm w-4 md:w-5 text-center"></i>';
+
+                // Estilos de Destaque 1, 2, 3 e Comuns
+                let rankClass = 'bg-slate-800 border-l-2 border-slate-600 py-1.5 px-2 md:px-3 text-sm opacity-90';
+                let rankNumStr = `<span class="text-slate-400 font-bold w-5 text-center text-xs">${rank}º</span>`;
+                
+                if (rank === 1) {
+                    rankClass = 'rank-1 glass-panel text-white shadow-lg py-2.5 px-3 text-base font-bold scale-[1.02] z-10 mb-1';
+                    rankNumStr = `<i class="fa-solid fa-medal text-brand-gold text-lg md:text-xl w-5 text-center drop-shadow-md"></i>`;
+                } else if (rank === 2) {
+                    rankClass = 'rank-2 glass-panel text-white py-2 px-3 text-sm font-semibold mb-1';
+                    rankNumStr = `<i class="fa-solid fa-medal text-brand-silver text-base md:text-lg w-5 text-center"></i>`;
+                } else if (rank === 3) {
+                    rankClass = 'rank-3 glass-panel text-white py-2 px-3 text-sm font-semibold mb-2';
+                    rankNumStr = `<i class="fa-solid fa-medal text-brand-bronze text-base md:text-lg w-5 text-center"></i>`;
+                }
+
+                const isMe = p.userId === currentUser.uid;
+                
+                html += `
+                <li class="${rankClass} rounded-lg flex items-center justify-between transform transition-all duration-300 ${isMe ? 'ring-1 ring-brand-primary' : ''}">
+                    <div class="flex items-center gap-1.5 md:gap-3 overflow-hidden">
+                        ${rankNumStr}
+                        ${trendIcon}
+                        <span class="font-bold ${rank <= 3 ? 'text-white' : 'text-slate-300'} truncate max-w-[120px] sm:max-w-[180px] md:max-w-[200px]">
+                            ${p.username} ${isMe ? '<span class="text-[10px] text-brand-primary ml-1 uppercase">(Você)</span>' : ''}
+                        </span>
+                    </div>
+                    <div class="font-mono font-bold shrink-0 ml-2 ${rank === 1 ? 'text-brand-gold text-lg' : 'text-slate-200 text-sm md:text-base'}">
+                        ${p.score.toLocaleString()}
+                    </div>
+                </li>
+                `;
+            });
+            
+            ul.innerHTML = html;
+            
+            // Checagem de Vencedor para a tela final (se o jogo acabou de terminar)
+            if (gameStatus === 'finished' && players.length > 0) {
+                const winner = players[0];
+                document.getElementById('winner-name').innerText = winner.username;
+                document.getElementById('winner-score').innerText = winner.score + ' cliques';
+            }
+        }
+
+        function endGameSession() {
+            gameStatus = 'finished';
+            if(syncInterval) clearInterval(syncInterval);
+            if(timerInterval) clearInterval(timerInterval);
+            
+            // Garantir último sync do host (e de todos)
+            const playerRef = doc(db, 'artifacts', appId, 'public', 'data', 'clicker_players', `${currentRoomId}_${currentUser.uid}`);
+            updateDoc(playerRef, { score: localScore }).catch(e=>console.log(e));
+            
+            // Mostra tela de resultado
+            document.getElementById('screen-result').classList.remove('hidden');
+        }
+
+        window.resetToLobby = () => {
+            // Limpa listeners ativos desta sala
+            if (unsubscribeRoom) unsubscribeRoom();
+            if (unsubscribePlayers) unsubscribePlayers();
+            
+            currentRoomId = null;
+            isHost = false;
+            
+            // Esconde overlay de resultado e volta pro login
+            document.getElementById('screen-result').classList.add('hidden');
+            switchScreen('screen-login');
+            
+            // Reseta inputs
+            document.getElementById('input-room-code').value = '';
+            document.getElementById('login-error').classList.add('hidden');
+        }
+
+        // Sistema simples de Mensagem flutuante (substituindo alert)
+        function showMessage(msg) {
+            const m = document.createElement('div');
+            m.className = 'fixed top-20 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-6 py-3 rounded-full font-bold shadow-xl z-50 transition-opacity duration-300';
+            m.innerText = msg;
+            document.body.appendChild(m);
+            setTimeout(() => {
+                m.style.opacity = '0';
+                setTimeout(() => m.remove(), 300);
+            }, 2500);
+        }
+
+        // CSS extra injetado via JS para animação de flutuação de pontuação local
+        const styleSheet = document.createElement("style");
+        styleSheet.innerText = `
+            @keyframes floatUp {
+                0% { opacity: 1; transform: translateY(0) scale(1); }
+                100% { opacity: 0; transform: translateY(-50px) scale(1.5); }
+            }
+        `;
+        document.head.appendChild(styleSheet);
+    </script>
+</body>
+</html>
