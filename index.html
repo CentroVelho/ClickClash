@@ -9,7 +9,6 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Oswald:wght@700&display=swap" rel="stylesheet">
     
-    <!-- Incluindo a biblioteca PeerJS para o P2P -->
     <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
     
     <script>
@@ -53,18 +52,16 @@
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
 
-        /* Efeito no botão principal de clique */
         .click-btn {
             box-shadow: 0 0 30px rgba(139, 92, 246, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.2);
             transition: transform 0.05s ease, box-shadow 0.1s ease;
-            touch-action: manipulation; /* Melhora a resposta ao toque */
+            touch-action: manipulation;
         }
         .click-btn:active {
             transform: scale(0.95);
             box-shadow: 0 0 15px rgba(139, 92, 246, 0.8), inset 0 0 10px rgba(0, 0, 0, 0.5);
         }
 
-        /* Estilos de Ranking */
         .rank-1 { border-left: 4px solid #fbbf24; background: linear-gradient(90deg, rgba(251,191,36,0.1) 0%, transparent 100%); }
         .rank-2 { border-left: 4px solid #94a3b8; background: linear-gradient(90deg, rgba(148,163,184,0.1) 0%, transparent 100%); }
         .rank-3 { border-left: 4px solid #b45309; background: linear-gradient(90deg, rgba(180,83,9,0.1) 0%, transparent 100%); }
@@ -84,7 +81,7 @@
                 <span class="font-sports text-2xl tracking-wider text-white uppercase">Click<span class="text-brand-primary">Clash</span></span>
             </div>
             <div id="connection-status" class="text-sm font-semibold text-slate-400 flex items-center gap-2">
-                <span class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span> Inicializando P2P...
+                <span class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span> Aguardando...
             </div>
         </div>
     </nav>
@@ -93,7 +90,7 @@
         
         <!-- TELA 1: LOGIN E SETUP -->
         <div id="screen-login" class="absolute inset-0 z-20 flex flex-col items-center justify-center p-4 bg-brand-dark transition-opacity duration-300">
-            <div class="glass-panel p-8 rounded-2xl w-full max-w-md shadow-2xl space-y-6">
+            <div class="glass-panel p-6 md:p-8 rounded-2xl w-full max-w-md shadow-2xl space-y-6">
                 <h2 class="text-2xl font-bold text-center">Bem-vindo ao Torneio</h2>
                 
                 <div>
@@ -101,52 +98,78 @@
                     <input type="text" id="input-username" placeholder="Ex: NinjaClicker" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 pt-2">
-                    <button onclick="uiShowCreateRoom()" class="bg-brand-primary hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-plus"></i> Criar Sala
+                <div class="space-y-3 pt-2">
+                    <!-- Modo 1: Multijogador -->
+                    <button onclick="actionGlobalMatch()" class="w-full bg-brand-primary hover:bg-purple-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg shadow-purple-900/50">
+                        <i class="fa-solid fa-earth-americas text-xl"></i> Multijogador (Global)
                     </button>
-                    <button onclick="uiShowJoinRoom()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
-                        <i class="fa-solid fa-sign-in-alt"></i> Entrar
+
+                    <!-- Modo 2: Com Amigo -->
+                    <button onclick="uiShowFriendsMenu()" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-user-group"></i> Jogar com Amigo
+                    </button>
+
+                    <!-- Modo 3: Treino Offline -->
+                    <button onclick="actionOfflineMatch()" class="w-full bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-robot"></i> Treino Offline (2 Min)
                     </button>
                 </div>
 
-                <!-- Painel Oculto: Criar Sala -->
-                <div id="panel-create" class="hidden border-t border-slate-700 pt-4 mt-4 space-y-4">
-                    <label class="block text-sm font-medium text-slate-400">Duração da Partida</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        <button onclick="selectTime(2)" id="btn-time-2" class="time-btn bg-brand-primary text-white py-2 rounded-md font-bold border-2 border-brand-primary">2 Min</button>
-                        <button onclick="selectTime(5)" id="btn-time-5" class="time-btn bg-slate-800 text-slate-300 py-2 rounded-md font-bold border-2 border-transparent hover:border-slate-500">5 Min</button>
-                        <button onclick="selectTime(10)" id="btn-time-10" class="time-btn bg-slate-800 text-slate-300 py-2 rounded-md font-bold border-2 border-transparent hover:border-slate-500">10 Min</button>
+                <!-- Painel Oculto: Menu de Amigos -->
+                <div id="panel-friends" class="hidden border-t border-slate-700 pt-4 mt-4 space-y-4">
+                    <div class="flex justify-between items-center mb-2">
+                        <h3 class="text-slate-300 font-bold">Sala Privada</h3>
+                        <button onclick="uiHideFriendsMenu()" class="text-slate-500 hover:text-white"><i class="fa-solid fa-xmark"></i></button>
                     </div>
-                    <button onclick="actionCreateRoom()" id="btn-do-create" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg mt-2 transition-colors">
-                        Gerar Sala
-                    </button>
-                </div>
-
-                <!-- Painel Oculto: Entrar na Sala -->
-                <div id="panel-join" class="hidden border-t border-slate-700 pt-4 mt-4 space-y-4">
-                    <label class="block text-sm font-medium text-slate-400">Código da Sala</label>
-                    <input type="text" id="input-room-code" placeholder="Ex: A4B2" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white uppercase text-center font-mono tracking-widest text-xl focus:outline-none focus:border-brand-primary focus:ring-1 focus:ring-brand-primary transition-all">
-                    <button onclick="actionJoinRoom()" id="btn-do-join" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 rounded-lg transition-colors">
-                        Conectar
-                    </button>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="actionCreateRoom()" id="btn-do-create" class="bg-slate-800 hover:bg-slate-700 text-brand-secondary font-bold py-3 rounded-lg border border-brand-secondary transition-colors">
+                            Criar Sala
+                        </button>
+                        <button onclick="uiShowJoinInput()" id="btn-show-join" class="bg-slate-800 hover:bg-slate-700 text-blue-400 font-bold py-3 rounded-lg border border-blue-400 transition-colors">
+                            Entrar
+                        </button>
+                    </div>
+                    
+                    <div id="panel-join-input" class="hidden flex gap-2">
+                        <input type="text" id="input-room-code" placeholder="CÓDIGO" class="w-2/3 bg-slate-900 border border-slate-600 rounded-lg px-3 py-2 text-white uppercase text-center font-mono tracking-widest focus:outline-none focus:border-brand-primary">
+                        <button onclick="actionJoinRoom()" id="btn-do-join" class="w-1/3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg transition-colors">
+                            IR <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <div id="login-error" class="text-red-400 text-sm text-center hidden">Erro ao conectar. Tente novamente.</div>
             </div>
         </div>
 
+        <!-- TELA 1.5: BUSCANDO GLOBAL -->
+        <div id="screen-searching" class="hidden absolute inset-0 z-30 flex flex-col items-center justify-center p-4 bg-brand-dark/95 backdrop-blur-sm">
+            <i class="fa-solid fa-satellite-dish text-5xl text-brand-primary animate-pulse mb-4"></i>
+            <h2 class="text-2xl font-sports uppercase text-white tracking-wide mb-2">Buscando Partida...</h2>
+            <p id="search-status" class="text-slate-400">Conectando aos servidores globais</p>
+            <button onclick="resetToLobby()" class="mt-8 text-sm text-slate-500 hover:text-white border border-slate-700 rounded-full px-4 py-1">Cancelar</button>
+        </div>
+
         <!-- TELA 2: LOBBY DE ESPERA -->
         <div id="screen-lobby" class="hidden absolute inset-0 z-10 flex flex-col items-center justify-center p-4 bg-brand-dark">
-            <div class="glass-panel p-8 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col h-[80vh]">
+            <div class="glass-panel p-6 md:p-8 rounded-2xl w-full max-w-lg shadow-2xl flex flex-col h-[80vh]">
                 <div class="text-center mb-6">
-                    <h2 class="text-3xl font-sports uppercase text-white tracking-wide">Sala de Espera</h2>
-                    <p class="text-slate-400 mt-2">Compartilhe o código abaixo com seus amigos</p>
-                    <div class="mt-4 bg-slate-900 border border-slate-700 p-4 rounded-xl flex items-center justify-center gap-4">
-                        <span id="display-room-code" class="text-4xl font-mono font-bold tracking-widest text-brand-primary">----</span>
-                        <button onclick="copyRoomCode()" class="text-slate-400 hover:text-white transition-colors" title="Copiar"><i class="fa-regular fa-copy text-xl"></i></button>
+                    <h2 class="text-3xl font-sports uppercase text-white tracking-wide" id="lobby-title">Sala de Espera</h2>
+                    
+                    <div id="room-code-container" class="mt-4 bg-slate-900 border border-slate-700 p-4 rounded-xl flex flex-col items-center justify-center gap-2">
+                        <p class="text-slate-400 text-sm">Código da Sala:</p>
+                        <div class="flex items-center gap-4">
+                            <span id="display-room-code" class="text-4xl font-mono font-bold tracking-widest text-brand-primary">----</span>
+                            <button onclick="copyRoomCode()" class="text-slate-400 hover:text-white transition-colors" title="Copiar"><i class="fa-regular fa-copy text-xl"></i></button>
+                        </div>
                     </div>
-                    <p id="display-room-time" class="text-brand-secondary font-semibold mt-3"><i class="fa-regular fa-clock"></i> Partida de 2 Minutos</p>
+                    
+                    <div id="global-waiting-msg" class="hidden mt-4 text-brand-secondary font-semibold animate-pulse">
+                        <i class="fa-solid fa-users"></i> Aguardando mais jogadores...
+                    </div>
+                    <div id="global-countdown-msg" class="hidden mt-4 text-brand-gold font-bold text-xl">
+                        A partida começa em <span id="global-timer-tick">5</span>...
+                    </div>
                 </div>
 
                 <div class="flex-grow bg-slate-800/50 rounded-xl p-4 overflow-y-auto border border-slate-700/50 mb-6">
@@ -162,7 +185,7 @@
                     </button>
                 </div>
                 <div id="guest-controls" class="text-center text-slate-400 animate-pulse hidden">
-                    Aguardando o criador da sala iniciar o jogo...
+                    Aguardando o anfitrião iniciar o jogo...
                 </div>
             </div>
         </div>
@@ -175,7 +198,7 @@
                 <div class="flex justify-between items-center bg-slate-800/80 rounded-full px-4 py-2 md:px-6 md:py-3 border border-slate-700 mb-2 md:mb-6 shadow-md shrink-0">
                     <div class="flex flex-col">
                         <span class="text-[10px] md:text-xs text-slate-400 uppercase tracking-widest font-bold">Tempo</span>
-                        <span id="game-timer" class="font-mono text-xl md:text-3xl font-bold text-brand-secondary leading-none">00:00</span>
+                        <span id="game-timer" class="font-mono text-xl md:text-3xl font-bold text-brand-secondary leading-none">02:00</span>
                     </div>
                     <div class="flex flex-col text-right">
                         <span class="text-[10px] md:text-xs text-slate-400 uppercase tracking-widest font-bold">Meus Cliques</span>
@@ -209,7 +232,7 @@
         <div id="screen-result" class="hidden absolute inset-0 z-50 flex items-center justify-center bg-slate-900/95 backdrop-blur-sm p-4">
             <div class="glass-panel p-8 rounded-3xl w-full max-w-lg text-center border-t-4 border-brand-primary">
                 <h2 class="font-sports text-5xl uppercase text-white mb-2">Fim de Jogo!</h2>
-                <p class="text-slate-400 mb-8">A partida terminou. Veja o campeão!</p>
+                <p class="text-slate-400 mb-8">A partida terminou.</p>
                 
                 <div class="bg-gradient-to-b from-yellow-900/40 to-transparent p-6 rounded-2xl border border-yellow-500/30 mb-8 relative">
                     <i class="fa-solid fa-crown text-yellow-500 text-4xl absolute -top-5 left-1/2 transform -translate-x-1/2 bg-slate-900 rounded-full p-2"></i>
@@ -219,7 +242,7 @@
                 </div>
                 
                 <button onclick="resetToLobby()" class="bg-slate-700 hover:bg-slate-600 text-white font-bold py-3 px-8 rounded-xl transition-colors">
-                    Sair da Sala
+                    Sair da Partida
                 </button>
             </div>
         </div>
@@ -227,47 +250,51 @@
     </main>
 
     <script>
-        // ==========================================
-        // ESTADO GLOBAL (P2P WEBRTC via PeerJS)
-        // ==========================================
-        const PEER_PREFIX = 'clickclash-br-'; // Evita colisão de salas no servidor público
-        let peer = null;            // Instância local do PeerJS
-        let isHost = false;         // Define se eu sou o criador da sala
-        let currentRoomId = null;   // Código da sala (ex: A4B2)
-        let myId = null;            // Meu ID gerado
-        let username = "";          
-        let selectedTime = 2;       // minutos
-        let gameStatus = 'idle';    // idle, waiting, playing, finished
+        // Configuração Pública de STUN Servers (Faz o P2P funcionar em redes diferentes/4G)
+        const peerOptions = {
+            config: {
+                'iceServers': [
+                    { urls: 'stun:stun.l.google.com:19302' },
+                    { urls: 'stun:stun1.l.google.com:19302' },
+                    { urls: 'stun:stun2.l.google.com:19302' },
+                    { urls: 'stun:stun.services.mozilla.com' }
+                ]
+            }
+        };
+
+        const PEER_PREFIX_FRIEND = 'cc-br-f-'; 
+        const PEER_PREFIX_GLOBAL = 'cc-br-g-'; 
         
+        let peer = null;            
+        let isHost = false;         
+        let currentRoomId = null;   
+        let myId = null;            
+        let username = "";          
+        let gameMode = ''; // 'offline', 'friend', 'global'
+        const gameDuration = 2; // Minutos fixos para todas as partidas
+        
+        let gameStatus = 'idle';    
         let localScore = 0;
         let timerInterval = null;
         let syncInterval = null;
+        let globalCountdownInt = null;
         
-        // Histórico de Ranks para calcular setas Verdes/Vermelhas
         let previousRanks = {}; 
         let currentTrends = {}; 
 
-        // ----- Estado Exclusivo do HOST -----
-        let connections = []; // Array de conexões dos jogadores convidados
-        let players = [];     // Array com os dados de todos da sala: { userId, username, score, joinedAt }
-        
-        // ----- Estado Exclusivo do CONVIDADO -----
-        let hostConnection = null; // A conexão com o host
+        // Estado P2P
+        let connections = []; 
+        let players = [];     
+        let hostConnection = null; 
 
-        // Referências DOM
         const elStatus = document.getElementById('connection-status');
         const errLogin = document.getElementById('login-error');
 
-        // Inicialização Visual
-        setTimeout(() => {
-            elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Sistema P2P Pronto`;
-        }, 500);
-
         // ==========================================
-        // FUNÇÕES DE INTERFACE (UI)
+        // UI FUNÇÕES
         // ==========================================
         function switchScreen(screenId) {
-            const screens = ['screen-login', 'screen-lobby', 'screen-game', 'screen-result'];
+            const screens = ['screen-login', 'screen-searching', 'screen-lobby', 'screen-game', 'screen-result'];
             screens.forEach(id => {
                 const el = document.getElementById(id);
                 if(el) el.classList.add('hidden');
@@ -275,30 +302,14 @@
             document.getElementById(screenId).classList.remove('hidden');
         }
 
-        window.uiShowCreateRoom = () => {
-            document.getElementById('panel-create').classList.remove('hidden');
-            document.getElementById('panel-join').classList.add('hidden');
+        window.uiShowFriendsMenu = () => {
+            document.getElementById('panel-friends').classList.remove('hidden');
         }
-
-        window.uiShowJoinRoom = () => {
-            document.getElementById('panel-join').classList.remove('hidden');
-            document.getElementById('panel-create').classList.add('hidden');
+        window.uiHideFriendsMenu = () => {
+            document.getElementById('panel-friends').classList.add('hidden');
         }
-
-        window.selectTime = (mins) => {
-            selectedTime = mins;
-            [2, 5, 10].forEach(t => {
-                const btn = document.getElementById(`btn-time-${t}`);
-                if(t === mins) {
-                    btn.classList.replace('bg-slate-800', 'bg-brand-primary');
-                    btn.classList.replace('text-slate-300', 'text-white');
-                    btn.classList.replace('border-transparent', 'border-brand-primary');
-                } else {
-                    btn.classList.replace('bg-brand-primary', 'bg-slate-800');
-                    btn.classList.replace('text-white', 'text-slate-300');
-                    btn.classList.replace('border-brand-primary', 'border-transparent');
-                }
-            });
+        window.uiShowJoinInput = () => {
+            document.getElementById('panel-join-input').classList.remove('hidden');
         }
 
         window.copyRoomCode = () => {
@@ -326,44 +337,190 @@
             return result;
         }
 
+        function validateUsername() {
+            const nameInput = document.getElementById('input-username').value.trim();
+            if(!nameInput) { showMessage("Digite seu apelido primeiro!"); return false; }
+            username = nameInput;
+            return true;
+        }
+
         // ==========================================
-        // LÓGICA DO HOST (CRIAR SALA)
+        // MODO OFFLINE (Sem rede)
+        // ==========================================
+        window.actionOfflineMatch = () => {
+            if(!validateUsername()) return;
+            gameMode = 'offline';
+            isHost = true;
+            myId = 'offline-user';
+            
+            players = [{ userId: myId, username: username, score: 0, joinedAt: Date.now() }];
+            
+            elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span> Modo Offline`;
+            
+            // Vai direto pro jogo, pulando o lobby
+            const endTime = Date.now() + (gameDuration * 60 * 1000);
+            gameStatus = 'playing';
+            updateLeaderboard(players);
+            startGameSession(endTime);
+        }
+
+        // ==========================================
+        // MODO AMIGO (Salas Privadas)
         // ==========================================
         window.actionCreateRoom = () => {
-            const nameInput = document.getElementById('input-username').value.trim();
-            if(!nameInput) { showMessage("Digite seu apelido primeiro!"); return; }
-
-            username = nameInput;
+            if(!validateUsername()) return;
+            gameMode = 'friend';
             const btn = document.getElementById('btn-do-create');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Criando...';
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
             btn.disabled = true;
 
             currentRoomId = generateRoomCode();
             isHost = true;
             
-            // O Host força o uso de um ID específico (Prefixo + Código)
-            peer = new Peer(PEER_PREFIX + currentRoomId);
-
-            peer.on('open', (id) => {
-                myId = id; // O ID real do host é o ID da sala
-                players = [{ userId: myId, username: username, score: 0, joinedAt: Date.now() }];
-                
+            initHostPeer(PEER_PREFIX_FRIEND + currentRoomId, () => {
                 setupLobbyUI();
-                updateLobbyList(players);
-                btn.innerHTML = 'Gerar Sala';
+                btn.innerHTML = 'Criar Sala';
                 btn.disabled = false;
             });
+        }
 
-            // Quando alguém tenta entrar na sala
+        window.actionJoinRoom = () => {
+            if(!validateUsername()) return;
+            const codeInput = document.getElementById('input-room-code').value.trim().toUpperCase();
+            if(!codeInput) { showMessage("Digite o código!"); return; }
+
+            gameMode = 'friend';
+            const btn = document.getElementById('btn-do-join');
+            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+            btn.disabled = true;
+            currentRoomId = codeInput;
+            isHost = false;
+
+            initGuestPeer(PEER_PREFIX_FRIEND + currentRoomId, () => {
+                setupLobbyUI();
+                btn.innerHTML = 'IR <i class="fa-solid fa-arrow-right"></i>';
+                btn.disabled = false;
+            }, () => {
+                btn.innerHTML = 'IR <i class="fa-solid fa-arrow-right"></i>';
+                btn.disabled = false;
+            });
+        }
+
+        // ==========================================
+        // MODO MULTIJOGADOR GLOBAL (Matchmaking)
+        // ==========================================
+        let currentHubTry = 1;
+        const MAX_HUBS = 5;
+
+        window.actionGlobalMatch = () => {
+            if(!validateUsername()) return;
+            gameMode = 'global';
+            currentHubTry = 1;
+            
+            document.getElementById('search-status').innerText = "Procurando salas ativas...";
+            switchScreen('screen-searching');
+
+            // Convidado ganha ID aleatório
+            peer = new Peer(undefined, peerOptions);
+            
+            peer.on('open', (id) => {
+                myId = id;
+                tryConnectGlobalHub();
+            });
+
+            peer.on('error', (err) => {
+                if (err.type === 'peer-unavailable' && gameMode === 'global') {
+                    // Host não existe neste hub, tenta o próximo
+                    currentHubTry++;
+                    if (currentHubTry <= MAX_HUBS) {
+                        document.getElementById('search-status').innerText = `Buscando setor ${currentHubTry}...`;
+                        tryConnectGlobalHub();
+                    } else {
+                        // Ninguém jogando em nenhum hub. Vou CRIAR meu próprio hub!
+                        document.getElementById('search-status').innerText = "Criando nova sala global...";
+                        peer.destroy();
+                        setTimeout(hostGlobalMatch, 500);
+                    }
+                } else {
+                    showMessage("Erro de conexão global.");
+                    resetToLobby();
+                }
+            });
+        }
+
+        function tryConnectGlobalHub() {
+            const hubId = PEER_PREFIX_GLOBAL + currentHubTry;
+            hostConnection = peer.connect(hubId, { reliable: true });
+
+            hostConnection.on('open', () => {
+                // Achamos uma partida!
+                isHost = false;
+                currentRoomId = "GLOBAL-" + currentHubTry;
+                hostConnection.send({ type: 'JOIN', username: username });
+                setupLobbyUI();
+                
+                hostConnection.on('data', handleHostCommand);
+                hostConnection.on('close', () => { showMessage("Sala fechada."); resetToLobby(); });
+            });
+            // O evento 'error' do peer captura se falhar.
+        }
+
+        function hostGlobalMatch() {
+            isHost = true;
+            // Pega um Hub aleatório para espalhar a carga
+            const myHubNum = Math.floor(Math.random() * MAX_HUBS) + 1;
+            currentRoomId = "GLOBAL-" + myHubNum;
+            
+            initHostPeer(PEER_PREFIX_GLOBAL + myHubNum, () => {
+                setupLobbyUI();
+            });
+        }
+
+        // ==========================================
+        // MOTOR DE CONEXÃO P2P BASE
+        // ==========================================
+        function initHostPeer(idToUse, onSuccess) {
+            peer = new Peer(idToUse, peerOptions);
+
+            peer.on('open', (id) => {
+                myId = id; 
+                players = [{ userId: myId, username: username, score: 0, joinedAt: Date.now() }];
+                elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-green-500 inline-block"></span> Conectado (Criador)`;
+                if(onSuccess) onSuccess();
+            });
+
             peer.on('connection', (conn) => {
                 connections.push(conn);
                 
                 conn.on('data', (data) => {
-                    handleGuestMessage(conn, data);
+                    if (data.type === 'JOIN') {
+                        if (gameStatus !== 'waiting') {
+                            conn.send({ type: 'ERROR', message: 'Jogo já começou' });
+                            setTimeout(() => conn.close(), 500);
+                            return;
+                        }
+                        players.push({ userId: conn.peer, username: data.username, score: 0, joinedAt: Date.now() });
+                        
+                        conn.send({ type: 'LOBBY_UPDATE', players });
+                        broadcastToGuests({ type: 'LOBBY_UPDATE', players });
+                        updateLobbyList(players);
+
+                        // Lógica Auto-Start Multijogador
+                        if (gameMode === 'global' && players.length >= 2 && !globalCountdownInt) {
+                            startGlobalCountdown();
+                        }
+
+                    } else if (data.type === 'SCORE_UPDATE' && gameStatus === 'playing') {
+                        const playerIndex = players.findIndex(p => p.userId === conn.peer);
+                        if (playerIndex > -1) {
+                            players[playerIndex].score = data.score;
+                            updateLeaderboard(players); 
+                            broadcastToGuests({ type: 'LEADERBOARD_UPDATE', players }); 
+                        }
+                    }
                 });
                 
                 conn.on('close', () => {
-                    // Remover jogador que saiu
                     connections = connections.filter(c => c !== conn);
                     players = players.filter(p => p.userId !== conn.peer);
                     broadcastToGuests({ type: 'LOBBY_UPDATE', players });
@@ -372,48 +529,38 @@
             });
 
             peer.on('error', (err) => {
-                console.error(err);
                 if(err.type === 'unavailable-id') {
-                    // Código de sala conflitou, tenta de novo
-                    currentRoomId = generateRoomCode();
-                    actionCreateRoom(); 
+                    showMessage("Erro: Código de sala em uso.");
                 } else {
-                    errLogin.innerText = "Erro ao criar sala. Verifique a internet.";
+                    errLogin.innerText = "Falha de rede P2P.";
                     errLogin.classList.remove('hidden');
-                    btn.innerHTML = 'Gerar Sala';
-                    btn.disabled = false;
                 }
+                resetToLobby();
             });
         }
 
-        // Host escutando mensagens dos convidados
-        function handleGuestMessage(conn, data) {
-            if (data.type === 'JOIN') {
-                if (gameStatus !== 'waiting') {
-                    conn.send({ type: 'ERROR', message: 'Jogo já em andamento' });
-                    setTimeout(() => conn.close(), 500);
-                    return;
-                }
-                
-                players.push({
-                    userId: conn.peer,
-                    username: data.username,
-                    score: 0,
-                    joinedAt: Date.now()
-                });
-                
-                conn.send({ type: 'LOBBY_UPDATE', players, duration: selectedTime });
-                broadcastToGuests({ type: 'LOBBY_UPDATE', players });
-                updateLobbyList(players);
+        function initGuestPeer(hostIdTarget, onSuccess, onFail) {
+            peer = new Peer(undefined, peerOptions);
 
-            } else if (data.type === 'SCORE_UPDATE' && gameStatus === 'playing') {
-                const playerIndex = players.findIndex(p => p.userId === conn.peer);
-                if (playerIndex > -1) {
-                    players[playerIndex].score = data.score;
-                    updateLeaderboard(players); // Host atualiza sua tela
-                    broadcastToGuests({ type: 'LEADERBOARD_UPDATE', players }); // Envia pra todos
-                }
-            }
+            peer.on('open', (id) => {
+                myId = id;
+                hostConnection = peer.connect(hostIdTarget, { reliable: true });
+
+                hostConnection.on('open', () => {
+                    elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Conectado (Convidado)`;
+                    hostConnection.send({ type: 'JOIN', username: username });
+                    if(onSuccess) onSuccess();
+                });
+
+                hostConnection.on('data', handleHostCommand);
+                hostConnection.on('close', () => { showMessage("Conexão perdida."); resetToLobby(); });
+            });
+
+            peer.on('error', (err) => {
+                if(onFail) onFail();
+                errLogin.innerText = "Sala não encontrada. Verifique o código.";
+                errLogin.classList.remove('hidden');
+            });
         }
 
         function broadcastToGuests(data) {
@@ -422,66 +569,10 @@
             });
         }
 
-        // ==========================================
-        // LÓGICA DO CONVIDADO (ENTRAR NA SALA)
-        // ==========================================
-        window.actionJoinRoom = () => {
-            const nameInput = document.getElementById('input-username').value.trim();
-            const codeInput = document.getElementById('input-room-code').value.trim().toUpperCase();
-            
-            if(!nameInput) { showMessage("Digite seu apelido primeiro!"); return; }
-            if(!codeInput) { showMessage("Digite o código da sala!"); return; }
-
-            username = nameInput;
-            const btn = document.getElementById('btn-do-join');
-            btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Conectando...';
-            btn.disabled = true;
-            errLogin.classList.add('hidden');
-
-            isHost = false;
-            currentRoomId = codeInput;
-
-            // Convidado ganha um ID aleatório gerado pelo PeerJS
-            peer = new Peer();
-
-            peer.on('open', (id) => {
-                myId = id;
-                
-                // Conectar ao Host usando o código da sala
-                hostConnection = peer.connect(PEER_PREFIX + currentRoomId, { reliable: true });
-
-                hostConnection.on('open', () => {
-                    hostConnection.send({ type: 'JOIN', username: username });
-                    setupLobbyUI();
-                    btn.innerHTML = 'Conectar';
-                    btn.disabled = false;
-                });
-
-                hostConnection.on('data', (data) => {
-                    handleHostCommand(data);
-                });
-
-                hostConnection.on('close', () => {
-                    showMessage("Conexão com o anfitrião perdida.");
-                    resetToLobby();
-                });
-            });
-
-            peer.on('error', (err) => {
-                console.error(err);
-                errLogin.innerText = "Sala não encontrada ou erro de rede.";
-                errLogin.classList.remove('hidden');
-                btn.innerHTML = 'Conectar';
-                btn.disabled = false;
-            });
-        }
-
-        // Convidado escutando comandos do Host
+        // Convidado Escuta
         function handleHostCommand(data) {
             if (data.type === 'LOBBY_UPDATE') {
-                if(data.duration) selectedTime = data.duration;
                 updateLobbyList(data.players);
-                document.getElementById('display-room-time').innerHTML = `<i class="fa-regular fa-clock"></i> Partida de ${selectedTime} Minutos`;
             } 
             else if (data.type === 'START_GAME') {
                 gameStatus = 'playing';
@@ -493,6 +584,11 @@
             else if (data.type === 'END_GAME') {
                 endGameSession(data.players);
             }
+            else if (data.type === 'GLOBAL_COUNTDOWN') {
+                document.getElementById('global-waiting-msg').classList.add('hidden');
+                document.getElementById('global-countdown-msg').classList.remove('hidden');
+                document.getElementById('global-timer-tick').innerText = data.time;
+            }
             else if (data.type === 'ERROR') {
                 showMessage(data.message);
                 resetToLobby();
@@ -500,22 +596,37 @@
         }
 
         // ==========================================
-        // LÓGICA COMPARTILHADA DA PARTIDA
+        // LOBBY E PARTIDA COMPARTILHADA
         // ==========================================
         function setupLobbyUI() {
-            document.getElementById('display-room-code').innerText = currentRoomId;
-            document.getElementById('display-room-time').innerHTML = `<i class="fa-regular fa-clock"></i> Partida de ${selectedTime} Minutos`;
-            
-            if (isHost) {
-                document.getElementById('host-controls').classList.remove('hidden');
-                document.getElementById('guest-controls').classList.add('hidden');
-            } else {
-                document.getElementById('host-controls').classList.add('hidden');
-                document.getElementById('guest-controls').classList.remove('hidden');
-            }
-            
             switchScreen('screen-lobby');
             gameStatus = 'waiting';
+
+            if(gameMode === 'global') {
+                document.getElementById('lobby-title').innerText = "Arena Global";
+                document.getElementById('room-code-container').classList.add('hidden');
+                document.getElementById('host-controls').classList.add('hidden');
+                document.getElementById('guest-controls').classList.add('hidden');
+                
+                if(isHost) {
+                    document.getElementById('global-waiting-msg').classList.remove('hidden');
+                } else {
+                    document.getElementById('global-waiting-msg').innerText = "Sincronizando com o anfitrião...";
+                    document.getElementById('global-waiting-msg').classList.remove('hidden');
+                }
+            } else {
+                document.getElementById('lobby-title').innerText = "Sala de Espera";
+                document.getElementById('room-code-container').classList.remove('hidden');
+                document.getElementById('display-room-code').innerText = currentRoomId;
+                
+                if (isHost) {
+                    document.getElementById('host-controls').classList.remove('hidden');
+                    document.getElementById('guest-controls').classList.add('hidden');
+                } else {
+                    document.getElementById('host-controls').classList.add('hidden');
+                    document.getElementById('guest-controls').classList.remove('hidden');
+                }
+            }
         }
 
         function updateLobbyList(playersArray) {
@@ -532,14 +643,35 @@
             `).join('');
         }
 
-        // Host aperta Iniciar
+        // Auto contagem para Modo Global
+        function startGlobalCountdown() {
+            let ticks = 5;
+            document.getElementById('global-waiting-msg').classList.add('hidden');
+            document.getElementById('global-countdown-msg').classList.remove('hidden');
+            document.getElementById('global-timer-tick').innerText = ticks;
+            broadcastToGuests({ type: 'GLOBAL_COUNTDOWN', time: ticks });
+
+            globalCountdownInt = setInterval(() => {
+                ticks--;
+                document.getElementById('global-timer-tick').innerText = ticks;
+                broadcastToGuests({ type: 'GLOBAL_COUNTDOWN', time: ticks });
+                
+                if(ticks <= 0) {
+                    clearInterval(globalCountdownInt);
+                    document.getElementById('global-countdown-msg').classList.add('hidden');
+                    actionStartGame();
+                }
+            }, 1000);
+        }
+
         window.actionStartGame = () => {
             if(!isHost) return;
-            
-            const endTime = Date.now() + (selectedTime * 60 * 1000);
+            const endTime = Date.now() + (gameDuration * 60 * 1000);
             gameStatus = 'playing';
             
-            broadcastToGuests({ type: 'START_GAME', endTime: endTime });
+            if(gameMode !== 'offline') {
+                broadcastToGuests({ type: 'START_GAME', endTime: endTime });
+            }
             startGameSession(endTime);
         }
 
@@ -554,7 +686,6 @@
             btn.onclick = (e) => {
                 if(gameStatus !== 'playing') return;
                 
-                // Feedback visual do clique
                 const plusOne = document.createElement('div');
                 plusOne.innerText = '+1';
                 plusOne.className = 'absolute text-2xl font-bold text-white pointer-events-none select-none opacity-0';
@@ -568,27 +699,35 @@
                 document.getElementById('game-my-score').innerText = localScore;
             };
 
-            // Envia pontos pelo P2P periodicamente para não sobrecarregar
-            let lastSyncedScore = 0;
-            if(syncInterval) clearInterval(syncInterval);
-            syncInterval = setInterval(() => {
-                if (gameStatus === 'playing' && localScore > lastSyncedScore) {
-                    lastSyncedScore = localScore;
-                    
-                    if (isHost) {
-                        // Host atualiza seu próprio score e avisa geral
-                        const p = players.find(p => p.userId === myId);
-                        if(p) p.score = localScore;
-                        updateLeaderboard(players);
-                        broadcastToGuests({ type: 'LEADERBOARD_UPDATE', players });
-                    } else {
-                        // Convidado avisa o Host do novo score
-                        hostConnection.send({ type: 'SCORE_UPDATE', score: localScore });
+            // Sync de rede (Ignora se for offline)
+            if(gameMode !== 'offline') {
+                let lastSyncedScore = 0;
+                if(syncInterval) clearInterval(syncInterval);
+                syncInterval = setInterval(() => {
+                    if (gameStatus === 'playing' && localScore > lastSyncedScore) {
+                        lastSyncedScore = localScore;
+                        
+                        if (isHost) {
+                            const p = players.find(p => p.userId === myId);
+                            if(p) p.score = localScore;
+                            updateLeaderboard(players);
+                            broadcastToGuests({ type: 'LEADERBOARD_UPDATE', players });
+                        } else {
+                            hostConnection.send({ type: 'SCORE_UPDATE', score: localScore });
+                        }
                     }
-                }
-            }, 800); // Sincroniza mais rápido no P2P (800ms)
+                }, 800);
+            } else {
+                // Offline apenas atualiza tela local
+                if(syncInterval) clearInterval(syncInterval);
+                syncInterval = setInterval(() => {
+                    const p = players[0];
+                    p.score = localScore;
+                    updateLeaderboard(players);
+                }, 500);
+            }
 
-            // Loop do Timer
+            // Loop do Relógio
             if(timerInterval) clearInterval(timerInterval);
             const elTimer = document.getElementById('game-timer');
             
@@ -600,8 +739,7 @@
                     elTimer.innerText = "00:00";
                     clearInterval(timerInterval);
                     if(isHost) {
-                        // Host decreta o fim
-                        broadcastToGuests({ type: 'END_GAME', players: players });
+                        if(gameMode !== 'offline') broadcastToGuests({ type: 'END_GAME', players: players });
                         endGameSession(players);
                     }
                 } else {
@@ -618,7 +756,6 @@
         }
 
         function updateLeaderboard(playersArray) {
-            // Fazer cópia para ordenar sem mutar a original
             const sortedPlayers = [...playersArray].sort((a, b) => b.score - a.score);
             const ul = document.getElementById('leaderboard-list');
             
@@ -630,11 +767,8 @@
                 
                 const prevRankIndex = previousRanks[p.userId];
                 if (prevRankIndex !== undefined) {
-                    if (index < prevRankIndex) {
-                        currentTrends[p.userId] = 'up';
-                    } else if (index > prevRankIndex) {
-                        currentTrends[p.userId] = 'down';
-                    }
+                    if (index < prevRankIndex) currentTrends[p.userId] = 'up';
+                    else if (index > prevRankIndex) currentTrends[p.userId] = 'down';
                 }
                 previousRanks[p.userId] = index;
                 
@@ -682,8 +816,8 @@
             gameStatus = 'finished';
             if(syncInterval) clearInterval(syncInterval);
             if(timerInterval) clearInterval(timerInterval);
+            if(globalCountdownInt) clearInterval(globalCountdownInt);
             
-            // Garantir que a tela atualize com a ordem final
             const sorted = [...finalPlayersArray].sort((a,b) => b.score - a.score);
             updateLeaderboard(sorted);
 
@@ -697,26 +831,23 @@
         }
 
         window.resetToLobby = () => {
-            // Fechar conexões P2P
-            if (hostConnection) {
-                hostConnection.close();
-                hostConnection = null;
-            }
-            if (peer) {
-                peer.destroy();
-                peer = null;
-            }
+            if (hostConnection) { hostConnection.close(); hostConnection = null; }
+            if (peer) { peer.destroy(); peer = null; }
+            if (globalCountdownInt) clearInterval(globalCountdownInt);
             
             connections = [];
             players = [];
             currentRoomId = null;
             isHost = false;
+            gameMode = '';
             
             document.getElementById('screen-result').classList.add('hidden');
+            document.getElementById('global-countdown-msg').classList.add('hidden');
             switchScreen('screen-login');
             
             document.getElementById('input-room-code').value = '';
             document.getElementById('login-error').classList.add('hidden');
+            elStatus.innerHTML = `<span class="w-2 h-2 rounded-full bg-slate-500 inline-block"></span> Aguardando...`;
         }
 
         function showMessage(msg) {
