@@ -587,7 +587,7 @@
             else if (data.type === 'GLOBAL_COUNTDOWN') {
                 document.getElementById('global-waiting-msg').classList.add('hidden');
                 document.getElementById('global-countdown-msg').classList.remove('hidden');
-                document.getElementById('global-timer-tick').innerText = data.time;
+                document.getElementById('global-timer-tick').innerText = data.time + "s";
             }
             else if (data.type === 'ERROR') {
                 showMessage(data.message);
@@ -645,15 +645,15 @@
 
         // Auto contagem para Modo Global
         function startGlobalCountdown() {
-            let ticks = 5;
+            let ticks = 120;
             document.getElementById('global-waiting-msg').classList.add('hidden');
             document.getElementById('global-countdown-msg').classList.remove('hidden');
-            document.getElementById('global-timer-tick').innerText = ticks;
+            document.getElementById('global-timer-tick').innerText = ticks + "s";
             broadcastToGuests({ type: 'GLOBAL_COUNTDOWN', time: ticks });
 
             globalCountdownInt = setInterval(() => {
                 ticks--;
-                document.getElementById('global-timer-tick').innerText = ticks;
+                document.getElementById('global-timer-tick').innerText = ticks + "s";
                 broadcastToGuests({ type: 'GLOBAL_COUNTDOWN', time: ticks });
                 
                 if(ticks <= 0) {
